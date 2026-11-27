@@ -1,0 +1,39 @@
+# CustoMapsCoD relay: every 5 minutes, asks the game servers and sends their status to the site.
+name: Game servers relay
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes (GitHub may start it a few minutes late)
+  workflow_dispatch:         # "Run workflow" button, to test
+
+permissions:
+  contents: write            # only to keep the repository active (see the last step)
+
+concurrency:
+  group: relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ask the servers and send their status to the site
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          RELAY_KEY: ${{ secrets.RELAY_KEY }}
+        run: python3 relay.py
+
+      # GitHub pauses scheduled workflows after 60 days without activity in the repository:
+      # an empty commit every 30 days keeps it running.
+      - name: Keep the repository active
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt 2592000 ]; then
+            git config user.name "relay-bot"
+            git config user.email "relay-bot@users.noreply.github.com"
+            git commit --allow-empty -m "Keep the relay active"
+            git push
+          fi
