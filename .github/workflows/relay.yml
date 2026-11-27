@@ -16,7 +16,7 @@ concurrency:
 jobs:
   relay:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 14
     steps:
       - uses: actions/checkout@v5
 
@@ -24,6 +24,7 @@ jobs:
         env:
           SITE_URL: ${{ secrets.SITE_URL }}
           RELAY_KEY: ${{ secrets.RELAY_KEY }}
+          ROUNDS: "10"
         run: python3 relay.py
 
       # GitHub pauses scheduled workflows after 60 days without activity in the repository:
